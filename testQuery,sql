@@ -1,7 +1,0 @@
-SELECT user_name, full_name, e_mail, login_time, password_date, added_date, added_by, modified_by, active_ind
-FROM ip_user
-
-SELECT (select s1.user from structure s1 where s1.structure_code=r.resource_code) Resources,  
-(select s2.description from structure s2 where s2.structure_code= r.org_res_code) Resource_Org
-FROM resources r
-WHERE (select s2.description from structure s2 where s2.structure_code= r.org_res_code) NOT LIKE '%Unassigned'
