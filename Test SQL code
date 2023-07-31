@@ -1,0 +1,1231 @@
+SET
+    TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+with map as (
+    SELECT
+        s.structure_code,
+        s.description as Project_Name,
+        vp.level_4 as Country_Territory,
+        vp.level_3 as Region,
+        TRIM(
+            case
+                when right(
+                    vp.level_5,
+                    len(vp.level_5) - patindex('%-%', vp.level_5)
+                ) like '%Branch BAU' then 'Branch BAU'
+                when right(
+                    vp.level_5,
+                    len(vp.level_5) - patindex('%-%', vp.level_5)
+                ) like '%N/A' then 'N/A'
+                else right(
+                    vp.level_5,
+                    len(vp.level_5) - patindex('%-%', vp.level_5)
+                )
+            end
+        ) as WBS_Workstream
+    FROM
+        structure s
+        LEFT JOIN vw_parent_plan vp ON s.structure_code = vp.structure_code
+    WHERE
+        depth = 6
+        AND structure_name = '$Plan'
+        AND father_code <> '4234'
+        AND father_code <> '2849C5'
+),
+properties as (
+    SELECT
+        cd.planning_code,
+        cd.arc_aff_fte AS FTE,
+        cd.arc_aff_workstations AS Workstations,
+        cd.arc_aff_sqm AS project_sqm,
+        cd.arc_sp_code as Small_Projects_code,
+        cd.arc_pt_number as PTE_number,
+        cd.arc_total_cost AS Project_Capex_Budget_LCY,
+        cd.arc_deprec_date as Depreciation_Start_Date,
+        cd.arc_horizon_id AS Horizon_ID,
+
+--added prioritisation score--
+cd.arc_zero_based_budge
+AS Prioritisation_Score,
+        cd.arc_legacy_source AS Legacy_Source_ID
+
+FROM
+        custom_data cd
+),
+entity as
+(
+    SELECT
+        planning_code,
+        short_name AS Project_ID,
+
+schedule_start,
+        actual_start,
+        schedule_finish,
+        actual_finish,
+        percent_complete
+AS Percent_Complete,
+
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code31
+        )
+AS Project_Type,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code32
+        )
+AS Project_Sub_Type,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code33
+        )
+AS Business_Initiatives,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code34
+        )
+AS Key_Driver,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code35
+        )
+AS Highest_Approval_Level,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code36
+        )
+AS PM_Partner,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code59
+        )
+AS Indicative_IT_Spend,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code60
+        )
+AS Has_Engineering_Component,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code66
+        )
+AS Needs_DEGA_Assistance,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code67
+        )
+AS Scale,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code91
+        )
+AS Works_mandated_by_regulator_municipality_or_government,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code92
+        )
+AS HandS_or_Security_issues,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code93
+        )
+AS Likelihood_of_building_resilience_issue,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code94
+        )
+AS Likelihood_of_building_operational_risk,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code95
+        )
+AS Contribute_towards_Carbon_Reduction,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code97
+        )
+AS Building_asset_classification,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code96
+        )
+AS Reduce_overall_PandL,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code98
+        )
+AS Estimated_ROI_or_payback,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code22
+        )
+AS Pathway,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code81
+        )
+AS Owned_or_Leased_Building,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code26
+        )
+AS Priority,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code193
+        )
+AS Business_Case_Approval,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code38
+        )
+AS Stage,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code69
+        )
+AS Is_DEGA_Assured,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code118
+        )
+AS Entity,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.op_cap_appr
+        )
+AS Investment_Approval,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code709
+        )
+AS Overall_Status_Assessment,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code99
+        )
+AS Workstream,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code122
+        )
+AS WPB_In_Scope,
+--added prioritisation tab fields--
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code97
+        )
+AS Building_Criticality_Rating,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code124
+        )
+AS Driver,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code125
+        )
+AS Anticipated_Failure,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code126
+        )
+AS Cost_Reduction,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code127
+        )
+AS Transition_to_CNZ,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code128
+        )
+AS Digitize_at_Scale,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code123
+        )
+AS Focus_on_Strengths,
+(
+            select
+    st.description
+from
+    structure st
+where
+                st.structure_code = pe.code20
+        )
+AS Project_Status
+    FROM
+        planning_entity pe
+    WHERE
+        ppl_code = planning_code
+),
+pmresource as
+(
+
+SELECT
+    pi.planning_code,
+    lr.lc_role2268_plan AS Project_Manager
+FROM
+    project_info pi
+    LEFT JOIN vw_lc_assn_plan lr ON pi.planning_code = lr.planning_code
+),
+mdpresource as
+(
+
+SELECT
+    pi.planning_code,
+    lr.lc_role2269_plan AS MDP_Country_Lead
+FROM
+    project_info pi
+    LEFT JOIN vw_lc_assn_plan lr ON pi.planning_code = lr.planning_code
+),
+wcmresource as
+(
+
+SELECT
+    pi.planning_code,
+    lr.lc_role2270_plan AS WCM_Country_Lead
+FROM
+    project_info pi
+    LEFT JOIN vw_lc_assn_plan lr ON pi.planning_code = lr.planning_code
+),
+projectview as
+(
+
+SELECT
+    pw.planning_code,
+    pw.pe01
+FROM
+    project_view pw
+),
+deptemp as
+(
+
+SELECT
+    template_id,
+    template_name
+FROM
+    depreciation_template
+),
+dep as
+(
+
+SELECT
+    template_id,
+    MAX(depreciation_life) Depreciation_Months
+FROM
+    depreciation
+GROUP BY
+        template_id
+),
+cdep as
+(
+
+SELECT
+    dt.template_id,
+    dt.template_name,
+    dp.Depreciation_Months
+FROM
+    deptemp dt
+    LEFT JOIN dep dp ON dt.template_id = dp.template_id
+WHERE
+        dt.template_name <> 'Default'
+),
+fmattrib as
+(
+    SELECT
+        DISTINCT fbl.structure_code,
+        cast(
+            left(
+                (
+                    select
+                        description
+                    from
+                        structure
+                    where
+                        structure_code = fba.line_attrib_value
+                ),
+                patindex(
+                    '% %',
+(
+                        select
+                            description
+                        from
+                            structure
+                        where
+                            structure_code = fba.line_attrib_value
+                    )
+                )
+            ) as int
+        ) + 1 as Account_Level03,
+        cdep.Depreciation_Months
+
+FROM
+        fm_budget_line fbl
+LEFT JOIN fm_budget_line_attrib fba ON fbl.line_id = fba.line_id
+        LEFT JOIN cdep ON cast
+(
+            left
+(
+                (
+                    select
+    description
+from
+    structure
+where
+                        structure_code = fba.line_attrib_value
+                )
+,
+                patindex
+(
+                    '% %',
+(
+                        select
+    description
+from
+    structure
+where
+                            structure_code = fba.line_attrib_value
+                    )
+)
+            ) as int
+        ) + 1 = cdep.template_id
+    WHERE
+        fba.line_attrib_code = 'Cbs1'
+        AND fbl.version_id = 1
+),
+avedepmonths as
+(
+    SELECT
+        DISTINCT structure_code,
+        AVG(Depreciation_Months) Depreciation_Months
+
+FROM
+        fmattrib
+GROUP BY
+        structure_code
+),
+--Extended FX rates year period by 3 years back as the current year move forward.
+--Also, modified the projected year rates from [Year+1] to ISNULL([Year+1],[Year+0]) to avoid null values if in case the rates for the next year is empty.
+fxrates AS
+(
+
+SELECT
+    currency_code,
+    [Year-8],
+    [Year-7],
+    [Year-6],
+    [Year-5],
+    [Year-4],
+    [Year-3],
+    [Year-2],
+    [Year-1],
+    [Year+0],
+    ISNULL([Year+1], [Year+0]) as [Year+1],
+    ISNULL([Year+1], [Year+0]) as [Year+2],
+    ISNULL([Year+1], [Year+0]) as [Year+3],
+    ISNULL([Year+1], [Year+0]) as [Year+4],
+    ISNULL([Year+1], [Year+0]) as [Year+5],
+    ISNULL([Year+1], [Year+0]) as [Year+6],
+    ISNULL([Year+1], [Year+0]) as [Year+7],
+    ISNULL([Year+1], [Year+0]) as [Year+8]
+FROM
+
+(
+            SELECT
+    DISTINCT currency_code,
+    exchange_rate,
+    CASE
+
+WHEN YEAR
+(period_start) = YEAR
+(GETDATE
+()) -8 THEN 'Year-8'
+                    WHEN YEAR
+(period_start) = YEAR
+(GETDATE
+()) -7 THEN 'Year-7'
+                    WHEN YEAR
+(period_start) = YEAR
+(GETDATE
+()) -6 THEN 'Year-6'
+                    WHEN YEAR
+(period_start) = YEAR
+(GETDATE
+()) -5 THEN 'Year-5'
+                    WHEN YEAR
+(period_start) = YEAR
+(GETDATE
+()) -4 THEN 'Year-4'
+                    WHEN YEAR
+(period_start) = YEAR
+(GETDATE
+()) -3 THEN 'Year-3'
+                    WHEN YEAR
+(period_start) = YEAR
+(GETDATE
+()) -2 THEN 'Year-2'
+                    WHEN YEAR
+(period_start) = YEAR
+(GETDATE
+()) -1 THEN 'Year-1'
+                    WHEN YEAR
+(period_start) = YEAR
+(GETDATE
+()) + 0 THEN 'Year+0'
+                    WHEN YEAR
+(period_start) = YEAR
+(GETDATE
+()) + 1 THEN 'Year+1'
+END AS FXYear
+
+FROM
+                fm_exchange_rate
+) rawfx PIVOT
+(
+            AVG
+(exchange_rate) FOR [FXYear] IN
+(
+                [Year-8],
+                [Year-7],
+                [Year-6],
+                [Year-5],
+                [Year-4],
+                [Year-3],
+                [Year-2],
+                [Year-1],
+                [Year+0],
+                [Year+1]
+            )
+        ) pfx
+),
+unpivotedfxrates AS
+(
+
+SELECT
+    DISTINCT currency_code,
+    (CAST(RIGHT(FXYear, 2) AS INT) + YEAR(GETDATE())) AS FXYear,
+    exchange_rate
+FROM
+    (
+            SELECT
+                currency_code,
+                [Year-8],
+                [Year-7],
+                [Year-6],
+                [Year-5],
+                [Year-4],
+                [Year-3],
+                [Year-2],
+                [Year-1],
+                [Year+0],
+                [Year+1],
+                [Year+2],
+                [Year+3],
+                [Year+4],
+                [Year+5],
+                [Year+6],
+                [Year+7],
+                [Year+8]
+            FROM
+                fxrates
+        ) pt UNPIVOT (
+            exchange_rate FOR FXYear IN (
+                [Year-8],
+                [Year-7],
+                [Year-6],
+                [Year-5],
+                [Year-4],
+                [Year-3],
+                [Year-2],
+                [Year-1],
+                [Year+0],
+                [Year+1],
+                [Year+2],
+                [Year+3],
+                [Year+4],
+                [Year+5],
+                [Year+6],
+                [Year+7],
+                [Year+8]
+            )
+        ) unpt
+),
+pdepyear as (
+
+SELECT
+    PPL_Code,
+    [Yearm4dn],
+    [Yearm3],
+    [Yearm2],
+    [Yearm1],
+    [Year0],
+    [Year1],
+    [Year2],
+    [Year3],
+    [Year4],
+    [Year5],
+    [Year6up]
+FROM
+    (
+            SELECT
+                DISTINCT fm.structure_code AS PPL_Code,
+                fm.amount * fx.exchange_rate as Dep_Cost_USD,
+                fm.currency_code,
+                s1.description account,
+                fm.period_id,
+                fp.epm_period_description,
+                fp.epm_year_description Dep_Year,
+                case
+                    when fp.epm_year_description < year(getdate()) -3 then 'Yearm4dn'
+                    when fp.epm_year_description = year(getdate()) -3 then 'Yearm3'
+                    when fp.epm_year_description = year(getdate()) -2 then 'Yearm2'
+                    when fp.epm_year_description = year(getdate()) -1 then 'Yearm1'
+                    when fp.epm_year_description = year(getdate()) + 0 then 'Year0'
+                    when fp.epm_year_description = year(getdate()) + 1 then 'Year1'
+                    when fp.epm_year_description = year(getdate()) + 2 then 'Year2'
+                    when fp.epm_year_description = year(getdate()) + 3 then 'Year3'
+                    when fp.epm_year_description = year(getdate()) + 4 then 'Year4'
+                    when fp.epm_year_description = year(getdate()) + 5 then 'Year5'
+                    when fp.epm_year_description > year(getdate()) + 5 then 'Year6up'
+                    else NULL
+                end as Dep_Year2
+            FROM
+                vw_fm_data fm
+                LEFT JOIN structure s1 ON fm.account_code = s1.structure_code
+                LEFT JOIN fm_period fp ON fm.period_id = fp.period_id
+                LEFT JOIN unpivotedfxrates fx ON fm.currency_code = fx.currency_code
+                AND fp.epm_year_description = fx.FXYear
+            WHERE
+                s1.description = 'Depreciation'
+                AND fm.version_id = '1'
+        ) p_dep PIVOT (
+            SUM(Dep_Cost_USD) FOR [Dep_Year2] IN (
+                [Yearm4dn],
+                [Yearm3],
+                [Yearm2],
+                [Yearm1],
+                [Year0],
+                [Year1],
+                [Year2],
+                [Year3],
+                [Year4],
+                [Year5],
+                [Year6up]
+            )
+        ) AS c_dep
+),
+masterdep as (
+    SELECT
+        DISTINCT ms.structure_code,
+        SUM(dy.Yearm4dn) AS Dep_USD_Yearm4dn,
+        SUM(dy.Yearm3) AS Dep_USD_Yearm3,
+        SUM(dy.Yearm2) AS Dep_USD_Yearm2,
+        SUM(dy.Yearm1) AS Dep_USD_Yearm1,
+        SUM(dy.Year0) AS Dep_USD_Year0,
+        SUM(dy.Year1) AS Dep_USD_Year1,
+        SUM(dy.Year2) AS Dep_USD_Year2,
+        SUM(dy.Year3) AS Dep_USD_Year3,
+        SUM(dy.Year4) AS Dep_USD_Year4,
+        SUM(dy.Year5) AS Dep_USD_Year5,
+        SUM(dy.Year6up) AS Dep_USD_Year6up
+
+FROM
+        map ms
+LEFT JOIN pdepyear dy ON ms.structure_code = dy.PPL_Code
+    GROUP BY
+        ms.structure_code
+),
+pacpyear as
+(
+
+SELECT
+    PPL_Code,
+    PYears,
+    Year0,
+    Year1,
+    Year2,
+    Year3,
+    Year4,
+    Year5,
+    Year6up
+FROM
+    (
+            SELECT
+                DISTINCT fm.structure_code AS PPL_Code,
+                fm.amount * fx.exchange_rate AS ACP_Plan_USD,
+                fm.currency_code,
+                s1.description account,
+                fm.period_id,
+                fp.epm_period_description,
+                fp.epm_year_description ACP_Year,
+                case
+                    when fp.epm_year_description = year(getdate()) then 'Year0'
+                    when fp.epm_year_description = year(getdate()) + 1 then 'Year1'
+                    when fp.epm_year_description = year(getdate()) + 2 then 'Year2'
+                    when fp.epm_year_description = year(getdate()) + 3 then 'Year3'
+                    when fp.epm_year_description = year(getdate()) + 4 then 'Year4'
+                    when fp.epm_year_description = year(getdate()) + 5 then 'Year5'
+                    when fp.epm_year_description > year(getdate()) + 5 then 'Year6up'
+                    else 'PYears'
+                end as ACP_Year2
+            FROM
+                vw_fm_data fm
+                LEFT JOIN structure s1 ON fm.account_code = s1.structure_code
+                LEFT JOIN fm_period fp ON fm.period_id = fp.period_id
+                LEFT JOIN unpivotedfxrates fx ON fm.currency_code = fx.currency_code
+                AND fp.epm_year_description = fx.FXYear
+            WHERE
+                fm.account_type_code = 'ACTP$CAP'
+                AND fm.version_id = '1'
+        ) p_acp PIVOT (
+            SUM(ACP_Plan_USD) FOR [ACP_Year2] IN (
+                PYears,
+                Year0,
+                Year1,
+                Year2,
+                Year3,
+                Year4,
+                Year5,
+                Year6up
+            )
+        ) AS c_acplan
+),
+masteracp as (
+    SELECT
+        DISTINCT ms.structure_code,
+        SUM(py.PYears) AS ACP_Plan_USD_PYears,
+        SUM(py.Year0) AS ACP_Plan_USD_Year0,
+        SUM(py.Year1) AS ACP_Plan_USD_Year1,
+        SUM(py.Year2) AS ACP_Plan_USD_Year2,
+        SUM(py.Year3) AS ACP_Plan_USD_Year3,
+        SUM(py.Year4) AS ACP_Plan_USD_Year4,
+        SUM(py.Year5) AS ACP_Plan_USD_Year5,
+        SUM(py.Year6up) AS ACP_Plan_USD_Year6up
+
+FROM
+        map ms
+LEFT JOIN pacpyear py ON ms.structure_code = py.PPL_Code
+    GROUP BY
+        ms.structure_code
+),
+vowd as
+(
+
+SELECT
+    PPL_Code,
+    Yearm4dn,
+    Yearm3,
+    Yearm2,
+    Yearm1,
+    Current_VOWD
+FROM
+    (
+            SELECT
+                DISTINCT fm.structure_code AS PPL_Code,
+                fm.amount * fx.exchange_rate AS Current_Year_VOWD_USD,
+                fm.currency_code,
+                s1.description account,
+                fm.period_id,
+                fp.epm_period_description,
+                fp.epm_year_description VOWD_Year,
+                case
+                    when fp.epm_year_description < year(getdate()) -3 then 'Yearm4dn'
+                    when fp.epm_year_description = year(getdate()) -3 then 'Yearm3'
+                    when fp.epm_year_description = year(getdate()) -2 then 'Yearm2'
+                    when fp.epm_year_description = year(getdate()) -1 then 'Yearm1'
+                    when fp.epm_year_description = year(getdate())
+                    and fp.epm_period_description < MONTH(GETDATE()) then 'Current_VOWD'
+                    else NULL
+                end as VOWD_Year2
+            FROM
+                vw_fm_data fm
+                LEFT JOIN structure s1 ON fm.account_code = s1.structure_code
+                LEFT JOIN fm_period fp ON fm.period_id = fp.period_id
+                LEFT JOIN unpivotedfxrates fx ON fm.currency_code = fx.currency_code
+                AND fp.epm_year_description = fx.FXYear
+            WHERE
+                fm.account_type_code = 'ACTP$CAP'
+                AND fm.version_id = '1'
+        ) AS p_acp PIVOT (
+            SUM(Current_Year_VOWD_USD) FOR [VOWD_Year2] IN (Yearm4dn, Yearm3, Yearm2, Yearm1, Current_VOWD)
+        ) AS c_acplan
+),
+mastervowd as (
+    SELECT
+        DISTINCT ms.structure_code,
+        SUM(wd.Yearm4dn) AS VOWD_USD_Yearm4dn,
+        SUM(wd.Yearm3) AS VOWD_USD_Yearm3,
+        SUM(wd.Yearm2) AS VOWD_USD_Yearm2,
+        SUM(wd.Yearm1) AS VOWD_USD_Yearm1,
+        SUM(wd.Current_VOWD) AS Current_Year_VOWD
+
+FROM
+        map ms
+LEFT JOIN vowd wd ON ms.structure_code = wd.PPL_Code
+    GROUP BY
+        ms.structure_code
+),
+opexfa AS
+(
+    SELECT
+        structure_code,
+        C1015
+
+FROM
+        vw_fm_columns_plan
+),
+portfoliocode as
+(
+
+SELECT
+    DISTINCT ppl_code as planning_code,
+    portfolio_code,
+    portfolio_description
+FROM
+    vw_ppm_cube_portf_dim
+),
+schedulefin AS
+(
+    SELECT
+        DISTINCT ppl_code,
+        short_name Work_ID,
+        [1 - Preparation & Briefing] GW1_Schedule_Date,
+        [2 - Concept Design] GW2_Schedule_Date,
+        [3 - Design Development] GW3_Schedule_Date,
+
+[4 - Technical Design] GW4_Schedule_Date,
+        [5 - Construction] GW5_Schedule_Date,
+
+[6 - Handover] GW6_Schedule_Date,
+        [7 - In Use] GW7_Schedule_Date
+
+FROM
+(
+            SELECT
+    pv.ppl_code,
+    pv.short_name,
+    CASE
+                    WHEN s.description IN('GW1-GW7', 'GW1 to GW7', 'GW7') THEN '7 - In Use'
+                    WHEN s.description LIKE '%In Use' THEN '7 - In Use'
+
+WHEN s
+.description IN
+('GW1-GW6', 'GW1 to GW6', 'GW6') THEN '6 - Handover'
+                    WHEN s.description LIKE '%Handover' THEN '6 - Handover'
+
+WHEN s
+.description IN
+('GW5') THEN '5 - Construction'
+                    WHEN s.description LIKE '%Construction' THEN '5 - Construction'
+
+WHEN s
+.description IN
+('GW4') THEN '4 - Technical Design'
+                    WHEN s.description LIKE '%Technical Design' THEN '4 - Technical Design'
+
+WHEN s
+.description IN
+('GW3') THEN '3 - Design Development'
+                    WHEN s.description LIKE '%Design Development' THEN '3 - Design Development'
+
+WHEN s
+.description IN
+('GW2') THEN '2 - Concept Design'
+                    WHEN s.description LIKE '%Concept Design' THEN '2 - Concept Design'
+
+WHEN s
+.description IN
+('GW1') THEN '1 - Preparation & Briefing'
+                    WHEN s.description LIKE '%Preparation & Briefing' THEN '1 - Preparation & Briefing'
+
+ELSE NULL
+END AS Activity_Name,
+                pv.schedule_finish
+
+FROM
+                structure s
+JOIN planning_entity pv ON pv.planning_code = s.structure_code
+
+WHERE
+                s
+.depth = 8
+        ) AS s_t PIVOT
+(
+            MAX
+(schedule_finish) FOR [Activity_Name] IN
+(
+                [1 - Preparation & Briefing],
+                [2 - Concept Design],
+                [3 - Design Development],
+                [4 - Technical Design],
+                [5 - Construction],
+                [6 - Handover],
+                [7 - In Use]
+            )
+        ) AS p_t
+),
+actualfin AS
+(
+    SELECT
+        DISTINCT ppl_code,
+        short_name Work_ID,
+        [1 - Preparation & Briefing] GW1_Actual_Date,
+        [2 - Concept Design] GW2_Actual_Date,
+        [3 - Design Development] GW3_Actual_Date,
+
+[4 - Technical Design] GW4_Actual_Date,
+        [5 - Construction] GW5_Actual_Date,
+
+[6 - Handover] GW6_Actual_Date,
+        [7 - In Use] GW7_Actual_Date
+
+FROM
+(
+            SELECT
+    pv.ppl_code,
+    pv.short_name,
+    CASE
+                    WHEN s.description IN('GW1-GW7', 'GW1 to GW7', 'GW7') THEN '7 - In Use'
+                    WHEN s.description LIKE '%In Use' THEN '7 - In Use'
+
+WHEN s
+.description IN
+('GW1-GW6', 'GW1 to GW6', 'GW6') THEN '6 - Handover'
+                    WHEN s.description LIKE '%Handover' THEN '6 - Handover'
+
+WHEN s
+.description IN
+('GW5') THEN '5 - Construction'
+                    WHEN s.description LIKE '%Construction' THEN '5 - Construction'
+
+WHEN s
+.description IN
+('GW4') THEN '4 - Technical Design'
+                    WHEN s.description LIKE '%Technical Design' THEN '4 - Technical Design'
+
+WHEN s
+.description IN
+('GW3') THEN '3 - Design Development'
+                    WHEN s.description LIKE '%Design Development' THEN '3 - Design Development'
+
+WHEN s
+.description IN
+('GW2') THEN '2 - Concept Design'
+                    WHEN s.description LIKE '%Concept Design' THEN '2 - Concept Design'
+
+WHEN s
+.description IN
+('GW1') THEN '1 - Preparation & Briefing'
+                    WHEN s.description LIKE '%Preparation & Briefing' THEN '1 - Preparation & Briefing'
+
+ELSE NULL
+END AS Activity_Name,
+                pv.actual_finish
+
+FROM
+                structure s
+JOIN planning_entity pv ON pv.planning_code = s.structure_code
+            WHERE
+                s.depth = 8
+        ) AS s_t PIVOT(
+            MAX(actual_finish) FOR [Activity_Name] IN(
+                [1 - Preparation & Briefing],
+                [2 - Concept Design],
+                [3 - Design Development],
+                [4 - Technical Design],
+                [5 - Construction],
+                [6 - Handover],
+                [7 - In Use]
+            )
+        ) AS p_t
+)
+SELECT
+    DISTINCT map.structure_code AS planning_code,
+    e.Project_ID,
+    p.Legacy_Source_ID,
+    map.Project_Name,
+    e.Investment_Approval,
+    r1.Project_Manager,
+
+p.Horizon_ID,
+    e.Owned_or_Leased_Building,
+    map.Region,
+
+map.Country_Territory,
+    e
+.Entity,
+    e.Business_Initiatives,
+
+e.Key_Driver,
+    map
+.WBS_Workstream,
+    e.Workstream,
+
+e.Priority,
+    pv.pe01 AS Work_Description,
+
+e.Project_Type,
+    e
+.Project_Sub_type,
+    pi.requested_start,
+    e.schedule_start,
+    e.actual_start,
+    e.schedule_finish,
+    e.actual_finish,
+    fn.GW1_Schedule_Date,
+    fn.GW2_Schedule_Date,
+    fn.GW3_Schedule_Date,
+    fn.GW4_Schedule_Date,
+    fn.GW5_Schedule_Date,
+    fn.GW6_Schedule_Date,
+    fn.GW7_Schedule_Date,
+    an.GW1_Actual_Date,
+    an.GW2_Actual_Date,
+    an.GW3_Actual_Date,
+    an.GW4_Actual_Date,
+    an.GW5_Actual_Date,
+    an.GW6_Actual_Date,
+
+an.GW7_Actual_Date,
+    e
+.Business_Case_Approval,
+    e.Stage,
+    e.Percent_Complete,
+    e.Project_Status,
+
+p.Depreciation_Start_Date,
+    adm.Depreciation_Months,
+
+mc.ACP_Plan_USD_PYears,
+    mc
+.ACP_Plan_USD_Year0,
+    mc.ACP_Plan_USD_Year1,
+    mc.ACP_Plan_USD_Year2,
+    mc.ACP_Plan_USD_Year3,
+    mc.ACP_Plan_USD_Year4,
+    mc.ACP_Plan_USD_Year5,
+    mc.ACP_Plan_USD_Year6up,
+    mv.VOWD_USD_Yearm4dn,
+    mv.VOWD_USD_Yearm3,
+    mv.VOWD_USD_Yearm2,
+    mv.VOWD_USD_Yearm1,
+    mv.Current_Year_VOWD,
+    mp.Dep_USD_Yearm4dn,
+    mp.Dep_USD_Yearm3,
+    mp.Dep_USD_Yearm2,
+    mp.Dep_USD_Yearm1,
+    mp.Dep_USD_Year0,
+    mp.Dep_USD_Year1,
+    mp.Dep_USD_Year2,
+    mp.Dep_USD_Year3,
+    mp.Dep_USD_Year4,
+    mp.Dep_USD_Year5,
+    mp.Dep_USD_Year6up,
+    ox.C1015 AS Total_Opex,
+    p.Small_Projects_code,
+
+e.Scale,
+    e
+.Pathway,
+    e.Is_DEGA_Assured,
+    e.Highest_Approval_Level,
+    p.FTE,
+    e.Has_Engineering_Component,
+    e.Needs_DEGA_Assistance,
+    e.Indicative_IT_Spend,
+    p.Workstations,
+    p.project_sqm,
+    e.Works_mandated_by_regulator_municipality_or_government,
+    e.HandS_or_Security_issues,
+    e.Likelihood_of_building_resilience_issue,
+    e.Likelihood_of_building_operational_risk,
+    e.Contribute_towards_Carbon_Reduction,
+    e.Building_asset_classification,
+    e.Reduce_overall_PandL,
+    e.Estimated_ROI_or_payback,
+    p.PTE_number,
+    e.Overall_Status_Assessment,
+    r2.MDP_Country_Lead,
+    r3.WCM_Country_Lead,
+
+e.PM_Partner,
+    e
+.WPB_In_Scope,
+
+p.Prioritisation_Score,
+    e
+.Building_Criticality_Rating,
+    e.Driver,
+    e.Anticipated_Failure,
+    e.Cost_Reduction,
+    e.Transition_to_CNZ,
+    e.Digitize_at_Scale,
+    e.Focus_on_Strengths,
+
+pc.portfolio_code,
+    pc.portfolio_description
+FROM
+    map map
+    LEFT JOIN project_info pi ON map.structure_code = pi.planning_code
+    LEFT JOIN entity e ON map.structure_code = e.planning_code
+    LEFT JOIN properties p ON map.structure_code = p.planning_code
+    LEFT JOIN pmresource r1 ON map.structure_code = r1.planning_code
+    LEFT JOIN mdpresource r2 ON map.structure_code = r2.planning_code
+    LEFT JOIN wcmresource r3 ON map.structure_code = r3.planning_code
+    LEFT JOIN projectview pv ON map.structure_code = pv.planning_code
+    LEFT JOIN avedepmonths adm ON map.structure_code = adm.structure_code
+    LEFT JOIN masterdep mp ON map.structure_code = mp.structure_code
+    LEFT JOIN masteracp mc ON map.structure_code = mc.structure_code
+    LEFT JOIN mastervowd mv ON map.structure_code = mv.structure_code
+    LEFT JOIN portfoliocode pc ON map.structure_code = pc.planning_code
+    LEFT JOIN actualfin an ON map.structure_code = an.ppl_code
+    LEFT JOIN schedulefin fn ON map.structure_code = fn.ppl_code
+    LEFT JOIN opexfa ox ON pi.planning_code = ox.structure_code
+WHERE
+    e.Pathway NOT IN('Template', 'Region', 'Country')
